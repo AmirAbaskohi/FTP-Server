@@ -2,12 +2,17 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include "json_reader.h"
+#include "server.h"
+
+#define CONFIG_FILE_PATH "./config.json"
 
 using namespace std;
 
-int main(){
-    Json_Reader a;
-    cout << a.get_json("./config.json")<<endl;
-    return 0;
+int main()
+{
+
+    Server server = Server(CONFIG_FILE_PATH);
+    server.print_server_info();
+
+    return 0; 
 }
