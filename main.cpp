@@ -13,7 +13,7 @@ int main()
 {
     Server server = Server(CONFIG_FILE_PATH);
     
-    server.print_server_info();
+    server.run();
 
     return 0; 
 }

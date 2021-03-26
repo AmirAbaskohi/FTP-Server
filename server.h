@@ -39,11 +39,9 @@ class Server{
         void set_users(string config);
         void set_ports(string config);
         void set_files(string config);
+        void create_sockets();
     public:
         Server(string config_file_path);
-        void create_sockets();
-        int get_command_channel_port();
-        int get_data_channel_port();
         void run();
         void print_server_info();
 };

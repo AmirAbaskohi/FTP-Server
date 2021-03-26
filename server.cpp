@@ -61,16 +61,6 @@ void Server::print_server_info()
         cout << files[i] << endl; 
 }
 
-int Server::get_command_channel_port()
-{
-    return command_channel_port;
-}
-
-int Server::get_data_channel_port()
-{
-    return data_channel_port;
-}
-
 void Server::create_sockets()
 {
     struct sockaddr_in command_address, data_address;
@@ -122,6 +112,8 @@ void Server::create_sockets()
 
 void Server::run()
 {
+    create_sockets();
+
     fd_set readfds;
     char buffer[1025];
     int max_socket_descriptor, activity, valread;
