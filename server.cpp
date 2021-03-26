@@ -74,3 +74,143 @@ int Server::get_data_channel_port()
 {
     return data_channel_port;
 }
+
+void Server::create_sockets()
+{
+    struct sockaddr_in command_address, data_address;
+
+    command_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (command_socket == 0)
+    {
+        cout << "Command socket creation failed!" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    data_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (data_socket == 0)
+    {
+        cout << "Data socket creation failed!" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    command_address.sin_family = AF_INET;
+    command_address.sin_addr.s_addr = INADDR_ANY;
+    command_address.sin_port = htons(command_channel_port);
+    if (bind(command_socket, (struct sockaddr*)&command_address, sizeof(command_address)) < 0)
+    {
+        cout << "Binding command socket failed!" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    data_address.sin_family = AF_INET;
+    data_address.sin_addr.s_addr = INADDR_ANY;
+    data_address.sin_port = htons(data_channel_port);
+    if (bind(data_socket, (struct sockaddr*)&data_address, sizeof(data_address)) < 0)
+    {
+        cout << "Binding command socket failed!" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(command_socket, 3) < 0)  
+    {  
+        cout << "Listening command socket failed!" << endl;  
+        exit(EXIT_FAILURE);  
+    }  
+
+    if (listen(data_socket, 3) < 0)  
+    {  
+        cout << "Listening data socket failed!" << endl;
+        exit(EXIT_FAILURE);  
+    }  
+}
+
+void Server::run()
+{
+    fd_set readfds;
+    char buffer[1025];
+    int max_socket_descriptor, activity, valread;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+
+    while(true)  
+    {  
+        FD_ZERO(&readfds);  
+      
+        FD_SET(command_socket, &readfds);
+        FD_SET(data_socket, &readfds);
+
+        max_socket_descriptor = command_socket > data_socket ? command_socket : data_socket;  
+              
+        for ( int i = 0 ; i < clients.size() ; i++)  
+        {  
+            int sd = clients[i];  
+ 
+            if (sd > 0)  
+                FD_SET( sd , &readfds);  
+                 
+            if (sd > max_socket_descriptor)  
+                max_socket_descriptor = sd;  
+        }  
+     
+        activity = select( max_socket_descriptor + 1 , &readfds , NULL , NULL , NULL);  
+       
+        if ((activity < 0) && (errno!=EINTR))  
+            cout << "Select error!" << endl;  
+             
+
+        if (FD_ISSET(command_socket, &readfds))  
+        {  
+            int new_socket = accept(command_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+
+            if (new_socket < 0)  
+            {  
+                cout << "Accept error for command socket!" << endl;  
+                exit(EXIT_FAILURE);  
+            }  
+             
+            cout << "New connection for command socket, socket fd is " << new_socket
+                 << ", ip is : " << inet_ntoa(address.sin_addr) <<  ", port : "
+                 << ntohs(address.sin_port) << endl;  
+           
+            if( send(new_socket, "hello motherfucker\n", strlen("hello motherfucker\n"), 0) != strlen("hello motherfucker\n") )  
+                cout << "send failed" << endl;  
+            
+            bool is_set = false;
+            for (int i = 0; i < clients.size(); i++)  
+            {  
+                if ( clients[i] == 0 )  
+                {  
+                    clients[i] = new_socket;
+                    is_set = true;
+                    break;
+                }  
+            }  
+            if (!is_set)
+                clients.push_back(new_socket);
+        } 
+
+        for (int i = 0; i < clients.size(); i++)  
+        {  
+            int sd = clients[i];  
+             
+            if (FD_ISSET(sd , &readfds))  
+            {  
+                if ((valread = read( sd , buffer, 1024)) == 0)  
+                {  
+                    getpeername(sd , (struct sockaddr*)&address , \
+                        (socklen_t*)&addrlen);  
+                    cout << "Guest disconnected , ip " << inet_ntoa(address.sin_addr)
+                         << " , port " << ntohs(address.sin_port) << endl;
+                         
+                    close(sd);  
+                    clients[i] = 0;  
+                }  
+                else 
+                {   
+                    buffer[valread] = '\0';  
+                    send(sd , buffer , strlen(buffer) , 0 );  
+                }  
+            }  
+        }  
+    }
+}
