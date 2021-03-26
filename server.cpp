@@ -2,6 +2,7 @@
 
 Server::Server(string config_file_path)
 {
+    system = Ftp_System();
     Json_Reader json_reader;
     string config = json_reader.get_json(config_file_path);
     set_users(config);

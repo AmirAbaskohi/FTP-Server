@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include "json_reader.h"
+#include "ftp_system.h"
 #include "user.h"
 
 #define USERS_KEY "users"
@@ -34,6 +35,7 @@ class Server{
         vector<int> clients;
         int command_socket;
         int data_socket;
+        Ftp_System system;
         void set_users(string config);
         void set_ports(string config);
         void set_files(string config);
