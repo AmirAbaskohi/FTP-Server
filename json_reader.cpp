@@ -31,15 +31,15 @@ string Json_Reader::find_value(string json, string key)
         i += 2;
         if (json.substr(first_index, second_index - first_index) == key){
             if (json[i] == '['){
-                first_index = i;
+                first_index = i++;
                 while(i < json.size() && json[i] != ']') i++;
-                second_index = i;
+                second_index = i++;
                 result = json.substr(first_index, second_index - first_index + 1);
             }
             else if(json[i] == '\"'){
-                first_index = i;
+                first_index = i++;
                 while(i < json.size() && json[i] != '\"') i++;
-                second_index = i;
+                second_index = i++;
                 result = json.substr(first_index+1, second_index - first_index - 1);
             }
             else{

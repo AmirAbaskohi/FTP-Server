@@ -13,9 +13,7 @@ int main()
 {
     Server server = Server(CONFIG_FILE_PATH);
     
-    server.create_sockets();
-
-    server.run();
+    server.print_server_info();
 
     return 0; 
 }

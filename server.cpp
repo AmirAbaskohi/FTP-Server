@@ -21,11 +21,6 @@ void Server::set_users(string config)
         string admin = json_reader.find_value(users_json_objects[i], ADMIN_KEY);
         string size = json_reader.find_value(users_json_objects[i], SIZE_KEY);
 
-        user_name = user_name.substr(0, user_name.find("\""));
-        password = password.substr(0, password.find("\""));
-        admin = admin.substr(0, admin.find("\""));
-        size = size.substr(0, size.find("\""));
-
         users.push_back(new User(user_name, password, stoi(size), admin == "true" ? true : false));
     }
 }
