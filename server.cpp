@@ -2,16 +2,17 @@
 
 Server::Server(string config_file_path)
 {
-    system = Ftp_System();
     Json_Reader json_reader;
     string config = json_reader.get_json(config_file_path);
-    set_users(config);
+    system = Ftp_System(get_config_users(config));
     set_ports(config);
     set_files(config);
 }
 
-void Server::set_users(string config)
+vector<User*> Server::get_config_users(string config)
 {
+    vector<User*> result;
+
     Json_Reader json_reader;
     vector<string> users_json_objects = json_reader.split_array(json_reader.find_value(config, USERS_KEY));
 
@@ -22,8 +23,10 @@ void Server::set_users(string config)
         string admin = json_reader.find_value(users_json_objects[i], ADMIN_KEY);
         string size = json_reader.find_value(users_json_objects[i], SIZE_KEY);
 
-        users.push_back(new User(user_name, password, stoi(size), admin == "true" ? true : false));
+        result.push_back(new User(user_name, password, stoi(size), admin == "true" ? true : false));
     }
+
+    return result;
 }
 
 void Server::set_ports(string config)
@@ -45,6 +48,8 @@ void Server::set_files(string config)
 
 void Server::print_server_info()
 {
+    vector<User*> users = system.get_all_users();
+
     cout << "Command Port: " << command_channel_port << endl;
     cout << "Data Port: " << data_channel_port << endl;
 
@@ -64,6 +69,7 @@ void Server::print_server_info()
 void Server::create_sockets()
 {
     struct sockaddr_in command_address, data_address;
+    int opt = 1;
 
     command_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (command_socket == 0)
@@ -78,6 +84,21 @@ void Server::create_sockets()
         cout << "Data socket creation failed!" << endl;
         exit(EXIT_FAILURE);
     }
+
+    if (setsockopt(command_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, 
+          sizeof(opt)) < 0 )  
+    {  
+        cout << "Setsockopt command socket error!" << endl;  
+        exit(EXIT_FAILURE);  
+    } 
+
+    if (setsockopt(data_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, 
+          sizeof(opt)) < 0 )  
+    {  
+        cout << "Setsockopt data socket error!" << endl;  
+        exit(EXIT_FAILURE);  
+    } 
+
 
     command_address.sin_family = AF_INET;
     command_address.sin_addr.s_addr = INADDR_ANY;
@@ -195,8 +216,9 @@ void Server::run()
                 }  
                 else 
                 {   
-                    buffer[valread] = '\0';  
-                    send(sd , buffer , strlen(buffer) , 0 );  
+                    buffer[valread-2] = '\0';
+                    string response = system.handle_command(buffer, sd);
+                    send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
                 }  
             }  
         }  

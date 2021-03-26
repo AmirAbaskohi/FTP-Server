@@ -28,7 +28,6 @@ using namespace std;
 
 class Server{
     private:
-        vector<User*> users;
         vector<string> files;
         int command_channel_port;
         int data_channel_port;
@@ -36,7 +35,7 @@ class Server{
         int command_socket;
         int data_socket;
         Ftp_System system;
-        void set_users(string config);
+        vector<User*> get_config_users(string config);
         void set_ports(string config);
         void set_files(string config);
         void create_sockets();

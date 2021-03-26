@@ -1,8 +1,8 @@
 all: ftp.out
 
 # linking
-ftp.out: main.o server.o json_reader.o user.o
-	g++  main.o server.o json_reader.o user.o -o ftp.out
+ftp.out: main.o server.o ftp_system.o json_reader.o user.o
+	g++  main.o server.o ftp_system.o json_reader.o user.o -o ftp.out
 
 # main
 main.o: main.cpp server.h
@@ -13,7 +13,7 @@ server.o: server.cpp server.h ftp_system.h json_reader.h user.h
 	g++ -c server.cpp -o server.o
 
 # ftp_system
-ftp_system.o: ftp_system.cpp ftp_system.h
+ftp_system.o: ftp_system.cpp ftp_system.h user.h
 	g++ -c ftp_system.cpp -o ftp_system.o
 
 # json_reader
