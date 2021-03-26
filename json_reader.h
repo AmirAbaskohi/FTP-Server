@@ -8,6 +8,14 @@
 
 using namespace std;
 
+#define COMMA ','
+#define QOUTATION '\"'
+#define COLON ':'
+#define LBRACK '['
+#define RBRACK ']'
+#define LBRACE '{'
+#define RBRACE '}'
+
 class Json_Reader{
     public: 
         string get_json(string path);
