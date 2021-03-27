@@ -85,15 +85,13 @@ void Server::create_sockets()
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(command_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, 
-          sizeof(opt)) < 0 )  
+    if (setsockopt(command_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )  
     {  
         cout << "Setsockopt command socket error!" << endl;  
         exit(EXIT_FAILURE);  
     } 
 
-    if (setsockopt(data_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, 
-          sizeof(opt)) < 0 )  
+    if (setsockopt(data_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0 )  
     {  
         cout << "Setsockopt data socket error!" << endl;  
         exit(EXIT_FAILURE);  
@@ -181,7 +179,7 @@ void Server::run()
                  << ", ip is : " << inet_ntoa(address.sin_addr) <<  ", port : "
                  << ntohs(address.sin_port) << endl;  
            
-            if( send(new_socket, "hello motherfucker\n", strlen("hello motherfucker\n"), 0) != strlen("hello motherfucker\n") )  
+            if( send(new_socket, "Welcome To FTP\n", strlen("Welcome To FTP\n"), 0) != strlen("Welcome To FTP\n") )  
                 cout << "send failed" << endl;  
             
             bool is_set = false;
@@ -217,7 +215,7 @@ void Server::run()
                 }  
                 else 
                 {   
-                    buffer[valread-2] = '\0';
+                    buffer[valread] = '\0';
                     string response = system.handle_command(buffer, sd);
                     send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
                 }  
