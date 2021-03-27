@@ -9,10 +9,12 @@
 #include "user.h"
 
 #define USER_COMMAND "user"
+#define PASS_COMMAND "pass"
 
 #define BAD_SEQUENCE_OF_COMMANDS "‫‪503:‬‬ ‫‪Bad‬‬ ‫‪sequence‬‬ ‫‪of‬‬ ‫‪commands.‬‬\n"
 #define INVALID_USERNAME_OR_PASSWORD "‫‪430:‬‬ ‫‪Invalid‬‬ ‫‪username‬‬ ‫‪or‬‬ ‫‪password‬‬\n"
 #define USERNAME_ACCEPTED "‫‪331:‬‬ ‫‪User‬‬ ‫‪name‬‬ ‫‪okay,‬‬ ‫‪need‬‬ ‫‪password.‬\n‬"
+#define PASSWORD_ACCEPTED "‫‪230:‬‬ ‫‪User‬‬ ‫‪logged‬‬ ‫‪in,‬‬ ‫‪proceed.‬‬ ‫‪Logged‬‬ ‫‪out‬‬ ‫‪if‬‬ ‫‪appropriate.‬‬\n"
 
 using namespace std;
 
@@ -29,6 +31,7 @@ class Ftp_System{
         vector<User*> all_users;
         vector<string> split_by_space(string cmd);
         string handle_user(vector<string> args, int client_sd);
+        string handle_password(vector<string> args, int client_sd);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);
     public:
