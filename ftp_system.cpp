@@ -71,6 +71,19 @@ string Ftp_System::handle_password(vector<string> args, int client_sd)
     return PASSWORD_ACCEPTED;
 }
 
+string Ftp_System::handle_quit(int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+
+    remover_online_user(client_sd);
+    return SUCCESSFUL_QUIT;
+}
+
 string Ftp_System::handle_command(char command[], int client_sd)
 {
     string cmd(command);
@@ -84,6 +97,8 @@ string Ftp_System::handle_command(char command[], int client_sd)
         return handle_user(splitted_cmd, client_sd);
     else if (splitted_cmd[0] == PASS_COMMAND && splitted_cmd.size() == 2)
         return handle_password(splitted_cmd, client_sd);
+    else if (splitted_cmd[0] == QUIT_COMMAND && splitted_cmd.size() == 1)
+        return handle_quit(client_sd);
     
     return SYNTAX_ERROR;
 }
@@ -91,4 +106,14 @@ string Ftp_System::handle_command(char command[], int client_sd)
 vector<User*> Ftp_System::get_all_users()
 {
     return all_users;
+}
+
+void Ftp_System::remover_online_user(int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it != online_users.end())
+        online_users.erase(client_sd);
 }

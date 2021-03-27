@@ -10,7 +10,7 @@
 
 #define USER_COMMAND "user"
 #define PASS_COMMAND "pass"
-#define QUIT "quit"
+#define QUIT_COMMAND "quit"
 
 #define BAD_SEQUENCE_OF_COMMANDS "‫‪503:‬‬ ‫‪Bad‬‬ ‫‪sequence‬‬ ‫‪of‬‬ ‫‪commands.‬‬\n"
 #define INVALID_USERNAME_OR_PASSWORD "‫‪430:‬‬ ‫‪Invalid‬‬ ‫‪username‬‬ ‫‪or‬‬ ‫‪password‬‬\n"
@@ -18,6 +18,7 @@
 #define PASSWORD_ACCEPTED "‫‪230:‬‬ ‫‪User‬‬ ‫‪logged‬‬ ‫‪in,‬‬ ‫‪proceed.‬‬ ‫‪Logged‬‬ ‫‪out‬‬ ‫‪if‬‬ ‫‪appropriate.‬‬\n"
 #define SUCCESSFUL_QUIT "‫‪221:‬‬ ‫‪Successful‬‬ ‫‪Quit.‬‬\n"
 #define SYNTAX_ERROR "‫‪501:‬‬ ‫‪Syntax‬‬ ‫‪error‬‬ ‫‪in‬‬ ‫‪parameters‬‬ ‫‪or‬‬ ‫‪arguments.‬‬\n"
+#define NEED_FOR_ACCOUNT "‫‪332:‬‬ ‫‪Need‬‬ ‫‪account‬‬ ‫‪for‬‬ ‫‪login.‬‬\n"
 
 using namespace std;
 
@@ -35,12 +36,14 @@ class Ftp_System{
         vector<string> split_by_space(string cmd);
         string handle_user(vector<string> args, int client_sd);
         string handle_password(vector<string> args, int client_sd);
+        string handle_quit(int client_sd);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);
     public:
         Ftp_System(vector<User*> _all_users);
         Ftp_System() = default;
         vector<User*> get_all_users();
+        void remover_online_user(int client_sd);
         string handle_command(char command[], int client_sd);
 };
 

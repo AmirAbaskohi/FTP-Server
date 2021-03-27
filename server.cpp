@@ -210,7 +210,8 @@ void Server::run()
                         (socklen_t*)&addrlen);  
                     cout << "Guest disconnected , ip " << inet_ntoa(address.sin_addr)
                          << " , port " << ntohs(address.sin_port) << endl;
-                         
+                    
+                    system.remover_online_user(sd);
                     close(sd);  
                     clients[i] = 0;  
                 }  
