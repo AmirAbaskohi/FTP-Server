@@ -49,14 +49,15 @@ void Client::run(){
     char response[1024] = {0};
     string request;
 
-    int valread = read( command_socket , response, 1024);
+    int valread = read(command_socket , response, 1024);
     cout << response << endl; 
     while(1){
         cout << "FTP> ";
         getline(cin, request);
         send(command_socket , request.c_str() , strlen(request.c_str()) , 0 );
-        valread = read( command_socket , response, 1024);
+        valread = read(command_socket , response, 1024);
         cout << response << endl;
+        memset(response, 0, strlen(response));
     }
 }
 
