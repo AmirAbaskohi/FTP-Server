@@ -77,12 +77,15 @@ string Ftp_System::handle_command(char command[], int client_sd)
 
     vector<string> splitted_cmd = split_by_space(cmd);
 
-    if (splitted_cmd[0] == USER_COMMAND)
+    if (splitted_cmd.size() == 0)
+        return SYNTAX_ERROR;
+
+    if (splitted_cmd[0] == USER_COMMAND && splitted_cmd.size() == 2)
         return handle_user(splitted_cmd, client_sd);
-    else if (splitted_cmd[0] == PASS_COMMAND)
+    else if (splitted_cmd[0] == PASS_COMMAND && splitted_cmd.size() == 2)
         return handle_password(splitted_cmd, client_sd);
     
-    return "";
+    return SYNTAX_ERROR;
 }
 
 vector<User*> Ftp_System::get_all_users()
