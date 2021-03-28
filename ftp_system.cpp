@@ -34,7 +34,34 @@ ftp_user* Ftp_System::create_online_user(User* user)
     ftp_user* result = new ftp_user();
     result->user_info = user;
     result->is_authorized = false;
+    result->current_dir = "./";
+    result->data = "";
+    result->has_data = false;
     return result;
+}
+
+bool Ftp_System::has_user_data(int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it != online_users.end())
+        return it->second->has_data;
+
+    return false;
+}
+
+string Ftp_System::get_user_data(int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it != online_users.end())
+        return it->second->data;
+
+    return "";
 }
 
 string Ftp_System::handle_user(vector<string> args, int client_sd)
@@ -84,8 +111,46 @@ string Ftp_System::handle_quit(int client_sd)
     return SUCCESSFUL_QUIT;
 }
 
+string Ftp_System::handle_ls(int client_sd)
+{
+    DIR *dir;
+	struct dirent *ent;
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+
+    it->second->has_data = true;
+    it->second->data = "";
+
+    dir = opendir (it->second->current_dir.c_str());
+
+	if (dir != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
+            if (strcmp(ent -> d_name, ".") != 0 && strcmp(ent -> d_name, "..") != 0)
+                it->second->data += string(ent->d_name) + "\n";
+        }
+        closedir (dir);
+        return LIST_TRANSFER_DONE;
+	}
+    else
+        return INTERNAL_SERVER_ERROR;
+}
+
 string Ftp_System::handle_command(char command[], int client_sd)
 {
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+    if (it != online_users.end())
+    {
+        it->second->has_data = false;
+        it->second->data = "";
+    }
+
     string cmd(command);
 
     vector<string> splitted_cmd = split_by_space(cmd);
@@ -99,7 +164,9 @@ string Ftp_System::handle_command(char command[], int client_sd)
         return handle_password(splitted_cmd, client_sd);
     else if (splitted_cmd[0] == QUIT_COMMAND && splitted_cmd.size() == 1)
         return handle_quit(client_sd);
-    
+    else if (splitted_cmd[0] == LS_COMMAND && splitted_cmd.size() == 1)
+        return handle_ls(client_sd);
+
     return SYNTAX_ERROR;
 }
 

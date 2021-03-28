@@ -55,6 +55,12 @@ void Client::run(){
         cout << "FTP> ";
         getline(cin, request);
         send(command_socket , request.c_str() , strlen(request.c_str()) , 0 );
+        if (request == "ls")
+        {
+            valread = read(data_socket, response, 1024);
+            cout << response << endl;
+            memset(response, 0, strlen(response));
+        }
         valread = read(command_socket , response, 1024);
         cout << response << endl;
         memset(response, 0, strlen(response));

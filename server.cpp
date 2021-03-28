@@ -237,6 +237,8 @@ void Server::handle_clients_requests(fd_set& readfds)
             {   
                 buffer[valread] = '\0';
                 string response = system.handle_command(buffer, sd);
+                if (system.has_user_data(sd))
+                    send(clients_command_data[sd], system.get_user_data(sd).c_str(), strlen(system.get_user_data(sd).c_str()),0);
                 send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
             }  
         }  
