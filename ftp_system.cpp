@@ -70,8 +70,11 @@ string Ftp_System::handle_user(vector<string> args, int client_sd)
 
     it = online_users.find(client_sd);
 
-    if (it != online_users.end())
+    if (it != online_users.end() && it->second->is_authorized)
         return BAD_SEQUENCE_OF_COMMANDS;
+
+    if (it != online_users.end())
+        remove_online_user(client_sd);
 
     User* selected_user = find_user(args[1]);
     if (selected_user == NULL)
@@ -104,10 +107,10 @@ string Ftp_System::handle_quit(int client_sd)
 
     it = online_users.find(client_sd);
 
-    if (it == online_users.end() || !it->second->is_authorized)
+    if (it == online_users.end())
         return NEED_FOR_ACCOUNT;
 
-    remover_online_user(client_sd);
+    remove_online_user(client_sd);
     return SUCCESSFUL_QUIT;
 }
 
@@ -175,7 +178,7 @@ vector<User*> Ftp_System::get_all_users()
     return all_users;
 }
 
-void Ftp_System::remover_online_user(int client_sd)
+void Ftp_System::remove_online_user(int client_sd)
 {
     map<int,ftp_user*>::iterator it;
 

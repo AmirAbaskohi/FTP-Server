@@ -228,7 +228,7 @@ void Server::handle_clients_requests(fd_set& readfds)
                 cout << "Guest disconnected , ip " << inet_ntoa(address.sin_addr)
                         << " , port " << ntohs(address.sin_port) << endl;
                 
-                system.remover_online_user(sd);
+                system.remove_online_user(sd);
                 close(sd);
                 close(clients_command_data[sd]);
                 clients[i] = 0;  

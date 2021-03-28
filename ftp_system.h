@@ -52,7 +52,7 @@ class Ftp_System{
         Ftp_System(vector<User*> _all_users);
         Ftp_System() = default;
         vector<User*> get_all_users();
-        void remover_online_user(int client_sd);
+        void remove_online_user(int client_sd);
         string handle_command(char command[], int client_sd);
         bool has_user_data(int client_sd);
         string get_user_data(int client_sd);
