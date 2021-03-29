@@ -3,19 +3,36 @@
 Ftp_System::Ftp_System(vector<User*> _all_users)
 {
     all_users = _all_users;
+
+    char cwd[1024];
+    getcwd(cwd, 1024);
+    string tmp(cwd);
+    default_directory = tmp;
 }
 
-vector<string> Ftp_System::split_by_space(string cmd)
+vector<string> Ftp_System::split(string str, char divider = ' ')
 {
-    vector<string> result;
-
-    istringstream ss(cmd);
-  
+    stringstream ss(str);
     string word;
+    vector< string> result;
 
-    while (ss >> word) 
-        result.push_back(word);
+    while(getline(ss, word, divider))
+    {
+        if(word != "")
+            result.push_back(word);
+    }
+    return result;
+}
 
+string Ftp_System::join(vector<string> vstr, char joiner)
+{
+    string result = "";
+    for(int i = 0; i < vstr.size(); i++)
+    {
+        result += vstr[i];
+        if (i < vstr.size()-1)
+            result += joiner;
+    }
     return result;
 }
 
@@ -34,9 +51,9 @@ ftp_user* Ftp_System::create_online_user(User* user)
     ftp_user* result = new ftp_user();
     result->user_info = user;
     result->is_authorized = false;
-    result->current_dir = "./";
     result->data = "";
     result->has_data = false;
+    result->current_dir = default_directory;
     return result;
 }
 
@@ -144,6 +161,117 @@ string Ftp_System::handle_ls(int client_sd)
         return INTERNAL_SERVER_ERROR;
 }
 
+string Ftp_System::handle_pwd(int client_sd){
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+    
+    return "257: " + it->second->current_dir ;
+}
+
+string Ftp_System::handle_mkd(string path, int client_sd){
+    map<int,ftp_user*>::iterator it;
+
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+
+    cout << mkdir(path.c_str(),0777) <<endl;
+    return "hello";
+}
+
+string Ftp_System::handle_dele(string type, string path, int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+    
+    if (type == "-f")
+    {
+        string file_path = it->second->current_dir + "/" + path ;
+        if (remove(file_path.c_str()) == 0)
+            return SUCCESSFUL_CHANGE;
+    }
+    else if (type == "-d")
+    {
+        if (remove(path.c_str()) == 0)
+            return SUCCESSFUL_CHANGE;
+    }
+    return INTERNAL_SERVER_ERROR;
+}
+
+string Ftp_System::handle_cwd(string path, int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+    if (path == "")
+    {
+        it->second->current_dir = default_directory;
+        return SUCCESSFUL_CHANGE;
+    }
+
+    vector<string> vpath = split(path, '/');
+    vector<string> tmp;
+    string new_directory;
+    if (vpath.size() == 0)
+    {
+        it->second->current_dir = "/";
+        return SUCCESSFUL_CHANGE;
+    }
+
+    if(path[0] == '/')
+        new_directory = "";
+    else
+        new_directory = it->second->current_dir;
+    
+    for(int i = 0; i < vpath.size(); i++)
+    {
+        if (vpath[i] == ".") continue;
+        else if (vpath[i] == ".."){
+            tmp = split(new_directory, '/');
+            if(tmp.size() > 0)
+            {
+                tmp.pop_back();
+            }
+            new_directory = "/" + join(tmp, '/');
+        }
+        else{
+            new_directory += (new_directory.back() == '/' ? "" : "/") + vpath[i];
+            DIR *dir = opendir(new_directory.c_str());
+            if (dir == 0)return INTERNAL_SERVER_ERROR;
+            closedir(dir);
+        }
+    }
+    it->second->current_dir = new_directory;
+    
+    return SUCCESSFUL_CHANGE;
+}
+
+string Ftp_System::handle_rename(string old_name, string new_name, int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+
+    string old_address = it->second->current_dir + "/" + old_name ;
+    string new_address = it->second->current_dir + "/" + new_name ;
+    if (rename(old_address.c_str(), new_address.c_str()) == 0)
+        return SUCCESSFUL_CHANGE;
+    else
+        return INTERNAL_SERVER_ERROR;
+}
+
 string Ftp_System::handle_command(char command[], int client_sd)
 {
     map<int,ftp_user*>::iterator it;
@@ -156,7 +284,7 @@ string Ftp_System::handle_command(char command[], int client_sd)
 
     string cmd(command);
 
-    vector<string> splitted_cmd = split_by_space(cmd);
+    vector<string> splitted_cmd = split(cmd);
 
     if (splitted_cmd.size() == 0)
         return SYNTAX_ERROR;
@@ -169,6 +297,19 @@ string Ftp_System::handle_command(char command[], int client_sd)
         return handle_quit(client_sd);
     else if (splitted_cmd[0] == LS_COMMAND && splitted_cmd.size() == 1)
         return handle_ls(client_sd);
+    else if (splitted_cmd[0] == PWD_COMMAND && splitted_cmd.size() == 1)
+        return handle_pwd(client_sd);
+    else if (splitted_cmd[0] == MKD_COMMAND && splitted_cmd.size() == 2)
+        return handle_mkd(splitted_cmd[1], client_sd);
+    else if (splitted_cmd[0] == CWD_COMMAND)
+    {
+        if(splitted_cmd.size() == 1)
+            return handle_cwd("", client_sd);
+        else if (splitted_cmd.size() == 2)
+            return handle_cwd(splitted_cmd[1], client_sd);
+    }
+    else if (splitted_cmd[0] == RENAME_COMMAND && splitted_cmd.size() == 3)
+        return handle_rename(splitted_cmd[1], splitted_cmd[2], client_sd);
 
     return SYNTAX_ERROR;
 }

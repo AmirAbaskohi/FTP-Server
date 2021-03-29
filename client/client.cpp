@@ -46,24 +46,41 @@ void Client::run(){
 
     if (data_socket <= 0 || command_socket <= 0) return;
 
-    char response[1024] = {0};
+    char response[PACKET_SIZE] = {0};
     string request;
+    string data;
 
-    int valread = read(command_socket , response, 1024);
+    int valread = read(command_socket , response, PACKET_SIZE);
     cout << response << endl; 
     while(1){
         cout << "FTP> ";
         getline(cin, request);
         send(command_socket , request.c_str() , strlen(request.c_str()) , 0 );
-        if (request == "ls")
-        {
-            valread = read(data_socket, response, 1024);
-            cout << response << endl;
-            memset(response, 0, strlen(response));
-        }
-        valread = read(command_socket , response, 1024);
-        cout << response << endl;
+
         memset(response, 0, strlen(response));
+        valread = read(command_socket, response, PACKET_SIZE);
+        cout << response <<endl;
+        if (strcmp(response, DATA_SENDING_MESSAGE) == 0)
+        {
+            data = "";
+            cout << DATA_SENDING_MESSAGE << endl;
+            memset(response, 0, strlen(response));
+            valread = read(command_socket, response, PACKET_SIZE);
+            int packet_size = atoi(response);
+            cout << "packet size : " << packet_size << endl;
+
+            for(int i = 0; i < packet_size; i++)
+            {
+                memset(response, 0, strlen(response));
+                valread = read(data_socket, response, PACKET_SIZE);
+                string tmp = response;
+                data += tmp;
+            }
+            cout << data << endl;
+        }
+        memset(response, 0, strlen(response));
+        valread = read(command_socket , response, PACKET_SIZE);
+        cout << response << endl;
     }
 }
 

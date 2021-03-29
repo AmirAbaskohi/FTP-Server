@@ -9,6 +9,15 @@ Server::Server(string config_file_path)
     set_files(config);
 }
 
+vector<string> Server::split_to_packets(string data, int packet_size)
+{
+    vector<string> packets;
+    for(int i=0; i < data.size(); i += packet_size){
+        packets.push_back(data.substr(i, packet_size));
+    }
+    return packets;
+}
+
 vector<User*> Server::get_config_users(string config)
 {
     vector<User*> result;
@@ -237,9 +246,28 @@ void Server::handle_clients_requests(fd_set& readfds)
             {   
                 buffer[valread] = '\0';
                 string response = system.handle_command(buffer, sd);
+                cout << system.has_user_data(sd) <<endl;
                 if (system.has_user_data(sd))
-                    send(clients_command_data[sd], system.get_user_data(sd).c_str(), strlen(system.get_user_data(sd).c_str()),0);
+                {
+                    vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
+                    send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
+                    sleep(0.000001);
+                    const char* packets_size = to_string(packets.size()).c_str();
+                    send(sd ,packets_size ,strlen(packets_size) , 0);
+                    sleep(0.000001);
+                    for(int i = 0; i < packets.size(); i++)
+                    {
+                        send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
+                        sleep(0.000001);
+                    }
+                }
+                else
+                {
+                    send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
+                    sleep(0.000001);
+                }
                 send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
+                sleep(0.000001);
             }  
         }  
     }

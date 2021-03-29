@@ -16,6 +16,10 @@
 #define COMMAND_CHANNEL_PORT_KEY "commandChannelPort"
 #define DATA_CHANNEL_PORT_KEY "dataChannelPort"
 
+#define PACKET_SIZE 1024
+#define DATA_SENDING_MESSAGE "Datas are sending"
+#define NO_DATA "No data"
+
 using namespace std;
 
 class Client{

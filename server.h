@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <map>
+#include <time.h>
 #include "json_reader.h"
 #include "ftp_system.h"
 #include "user.h"
@@ -24,6 +25,9 @@
 #define PASSWORD_KEY "password"
 #define SIZE_KEY "size"
 #define ADMIN_KEY "admin"
+#define PACKET_SIZE 1024
+#define DATA_SENDING_MESSAGE "Datas are sending"
+#define NO_DATA "No data"
 
 using namespace std;
 
@@ -46,7 +50,10 @@ class Server{
         void set_sockets(int& max_socket_descriptor, fd_set& readfds);
         void accept_connections();
         void handle_clients_requests(fd_set& readfds);
+
+        
     public:
+    vector<string> split_to_packets(string data, int packet_size);
         Server(string config_file_path);
         void run();
         void print_server_info();
