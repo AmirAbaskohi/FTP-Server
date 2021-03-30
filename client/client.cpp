@@ -59,15 +59,14 @@ void Client::run(){
 
         memset(response, 0, strlen(response));
         valread = read(command_socket, response, PACKET_SIZE);
-        cout << response <<endl;
+
         if (strcmp(response, DATA_SENDING_MESSAGE) == 0)
         {
             data = "";
-            cout << DATA_SENDING_MESSAGE << endl;
+
             memset(response, 0, strlen(response));
             valread = read(command_socket, response, PACKET_SIZE);
             int packet_size = atoi(response);
-            cout << "packet size : " << packet_size << endl;
 
             for(int i = 0; i < packet_size; i++)
             {
@@ -78,6 +77,7 @@ void Client::run(){
             }
             cout << data << endl;
         }
+
         memset(response, 0, strlen(response));
         valread = read(command_socket , response, PACKET_SIZE);
         cout << response << endl;
