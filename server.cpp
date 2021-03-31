@@ -4,9 +4,8 @@ Server::Server(string config_file_path)
 {
     Json_Reader json_reader;
     string config = json_reader.get_json(config_file_path);
-    system = Ftp_System(get_config_users(config));
+    system = Ftp_System(get_config_users(config), get_config_files(config));
     set_ports(config);
-    set_files(config);
 }
 
 vector<string> Server::split_to_packets(string data, int packet_size)
@@ -46,18 +45,23 @@ void Server::set_ports(string config)
     data_channel_port = stoi(json_reader.find_value(config, DATA_CHANNEL_PORT_KEY));
 }
 
-void Server::set_files(string config)
+vector<string> Server::get_config_files(string config)
 {
+    vector<string> result;
+
     Json_Reader json_reader;
     vector<string> file_names = json_reader.split_array(json_reader.find_value(config, FILES_KEY));
 
     for(int i = 0 ; i < file_names.size() ; i++)
-        files.push_back(file_names[i]);
+        result.push_back(file_names[i]);
+
+    return result;
 }
 
 void Server::print_server_info()
 {
     vector<User*> users = system.get_all_users();
+    vector<string> files = system.get_admin_files();
 
     cout << "Command Port: " << command_channel_port << endl;
     cout << "Data Port: " << data_channel_port << endl;
@@ -69,7 +73,7 @@ void Server::print_server_info()
         cout << users[i] -> get_user_name() << "\t\t" << users[i] -> get_password() << "\t  \t" 
              << users[i] -> get_size() << "\t\t" << users[i] -> get_is_admin() << endl; 
 
-    cout << "Files:" << endl;
+    cout << "Admin Files:" << endl;
     cout << "----------------------------------------------------------------------\n";
     for(int i = 0 ; i < files.size() ; i++)
         cout << files[i] << endl; 
@@ -246,28 +250,27 @@ void Server::handle_clients_requests(fd_set& readfds)
             {   
                 buffer[valread] = '\0';
                 string response = system.handle_command(buffer, sd);
-                cout << system.has_user_data(sd) <<endl;
                 if (system.has_user_data(sd))
                 {
                     vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
                     send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
-                    sleep(0.000001);
-                    const char* packets_size = to_string(packets.size()).c_str();
-                    send(sd ,packets_size ,strlen(packets_size) , 0);
-                    sleep(0.000001);
+                    usleep(100);
+                    string packet_size = to_string(packets.size());
+                    send(sd ,packet_size.c_str() ,strlen(packet_size.c_str()) , 0);
+                    usleep(100);
                     for(int i = 0; i < packets.size(); i++)
                     {
                         send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
-                        sleep(0.000001);
+                        usleep(100);
                     }
                 }
                 else
                 {
                     send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
-                    sleep(0.000001);
+                    usleep(100);
                 }
                 send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
-                sleep(0.000001);
+                usleep(100);
             }  
         }  
     }

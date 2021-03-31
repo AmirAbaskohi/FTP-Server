@@ -1,8 +1,9 @@
 #include "ftp_system.h"
 
-Ftp_System::Ftp_System(vector<User*> _all_users)
+Ftp_System::Ftp_System(vector<User*> _all_users, vector<string> _admin_files)
 {
     all_users = _all_users;
+    admin_files = _admin_files;
 
     char cwd[1024];
     getcwd(cwd, 1024);
@@ -22,6 +23,48 @@ vector<string> Ftp_System::split(string str, char divider = ' ')
             result.push_back(word);
     }
     return result;
+}
+
+bool Ftp_System::does_file_exist(string file_name, string directory)
+{
+    DIR *dir;
+	struct dirent *ent;
+
+	dir = opendir (directory.c_str());
+
+	if (dir != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
+            if (ent->d_type != DT_REG)
+                continue; 
+        	if (strcmp(ent->d_name, file_name.c_str()) == 0)  
+            {   
+                closedir(dir);
+                return true;
+            }
+        }
+        closedir (dir);
+	}
+
+    return false;
+}
+
+bool Ftp_System::is_file_for_admin(string file_name)
+{
+    for (int i = 0 ; i < admin_files.size() ; i++)
+        if (file_name == admin_files[i])
+            return true;
+    return false;
+}
+
+int Ftp_System::get_file_size(string file_name, string directory)
+{
+    ifstream in_file(directory+"/"+file_name, ios::binary);
+    in_file.seekg(0, ios::end);
+    int file_size = in_file.tellg();
+    in_file.close();
+    return file_size;
 }
 
 string Ftp_System::join(vector<string> vstr, char joiner)
@@ -141,8 +184,7 @@ string Ftp_System::handle_ls(int client_sd)
 
     if (it == online_users.end() || !it->second->is_authorized)
         return NEED_FOR_ACCOUNT;
-
-    it->second->has_data = true;
+    
     it->second->data = "";
 
     dir = opendir (it->second->current_dir.c_str());
@@ -155,6 +197,7 @@ string Ftp_System::handle_ls(int client_sd)
                 it->second->data += string(ent->d_name) + "\n";
         }
         closedir (dir);
+        it->second->has_data = true;
         return LIST_TRANSFER_DONE;
 	}
     else
@@ -169,7 +212,7 @@ string Ftp_System::handle_pwd(int client_sd){
     if (it == online_users.end() || !it->second->is_authorized)
         return NEED_FOR_ACCOUNT;
     
-    return "257: " + it->second->current_dir ;
+    return "257: " + it->second->current_dir + "\n";
 }
 
 string Ftp_System::handle_mkd(string path, int client_sd){
@@ -272,6 +315,37 @@ string Ftp_System::handle_rename(string old_name, string new_name, int client_sd
         return INTERNAL_SERVER_ERROR;
 }
 
+string Ftp_System::handle_download(string file_name, int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+
+    if (is_file_for_admin(file_name) && !it->second->user_info->get_is_admin())
+        return FILE_UNAVAILABLE;
+
+    if (does_file_exist(file_name, it->second->current_dir))
+    {
+        int size = get_file_size(file_name, it->second->current_dir);
+        if (size > it->second->user_info->get_size())
+            return CANT_OPEN_DATA_CONNECTION;
+
+        it->second->user_info->descrease_user_size(size);
+        ifstream ifs(it->second->current_dir + "/" + file_name);
+        string content((istreambuf_iterator<char>(ifs)),
+                        (istreambuf_iterator<char>()));
+        ifs.close();
+
+        it->second->data = content;
+        it->second->has_data = true;
+        return SUCCESSFUL_DOWNLOAD;
+    }
+
+    return INTERNAL_SERVER_ERROR;
+}
+
 string Ftp_System::handle_command(char command[], int client_sd)
 {
     map<int,ftp_user*>::iterator it;
@@ -310,13 +384,10 @@ string Ftp_System::handle_command(char command[], int client_sd)
     }
     else if (splitted_cmd[0] == RENAME_COMMAND && splitted_cmd.size() == 3)
         return handle_rename(splitted_cmd[1], splitted_cmd[2], client_sd);
+    else if (splitted_cmd[0] == DOWNLOAD_COMMAND && splitted_cmd.size() == 2)
+        return handle_download(splitted_cmd[1], client_sd);
 
     return SYNTAX_ERROR;
-}
-
-vector<User*> Ftp_System::get_all_users()
-{
-    return all_users;
 }
 
 void Ftp_System::remove_online_user(int client_sd)
@@ -327,4 +398,14 @@ void Ftp_System::remove_online_user(int client_sd)
 
     if (it != online_users.end())
         online_users.erase(client_sd);
+}
+
+vector<User*> Ftp_System::get_all_users()
+{
+    return all_users;
+}
+
+vector<string> Ftp_System::get_admin_files()
+{
+    return admin_files;
 }

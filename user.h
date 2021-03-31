@@ -12,13 +12,13 @@ class User{
         string password;
         int size;
         bool is_admin;
-        
     public:
         User(string _user_name, string _password, int _size, bool _is_admin);
         string get_user_name();
         string get_password();
         int get_size();
         bool get_is_admin();
+        void descrease_user_size(int decration_size);
 };
 
 #endif

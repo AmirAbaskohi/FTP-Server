@@ -26,6 +26,7 @@
 #define DELETE_COMMAND "dele"
 #define CWD_COMMAND "cwd"
 #define RENAME_COMMAND "rename"
+#define DOWNLOAD_COMMAND "retr"
 
 #define BAD_SEQUENCE_OF_COMMANDS "‫‪503:‬‬ ‫‪Bad‬‬ ‫‪sequence‬‬ ‫‪of‬‬ ‫‪commands.‬‬\n"
 #define INVALID_USERNAME_OR_PASSWORD "‫‪430:‬‬ ‫‪Invalid‬‬ ‫‪username‬‬ ‫‪or‬‬ ‫‪password‬‬\n"
@@ -36,7 +37,10 @@
 #define NEED_FOR_ACCOUNT "‫‪332:‬‬ ‫‪Need‬‬ ‫‪account‬‬ ‫‪for‬‬ ‫‪login.‬‬\n"
 #define INTERNAL_SERVER_ERROR "500: Error\n"
 #define LIST_TRANSFER_DONE "226: List transfer done.\n"
-#define SUCCESSFUL_CHANGE "250: Successful change."
+#define SUCCESSFUL_CHANGE "250: Successful change.\n"
+#define CANT_OPEN_DATA_CONNECTION "425: Can\'t open data connection.\n"
+#define SUCCESSFUL_DOWNLOAD "226: Successful download.\n"
+#define FILE_UNAVAILABLE "550: File unavailable.\n"
 
 using namespace std;
 
@@ -55,6 +59,7 @@ class Ftp_System{
         string default_directory;
         map<int, ftp_user*> online_users;
         vector<User*> all_users;
+        vector<string> admin_files;
         vector<string> split(string str, char divider);
         string join(vector<string> vstr, char joiner);
         string handle_user(vector<string> args, int client_sd);
@@ -66,12 +71,17 @@ class Ftp_System{
         string handle_dele(string type, string path, int client_sd);
         string handle_cwd(string path, int client_sd);
         string handle_rename(string old_name, string new_name, int client_sd);
+        string handle_download(string file_name, int client_sd);
+        bool does_file_exist(string file_name, string directory);
+        bool is_file_for_admin(string file_name);
+        int get_file_size(string file_name, string directory);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);
     public:
-        Ftp_System(vector<User*> _all_users);
+        Ftp_System(vector<User*> _all_users, vector<string> _admin_files);
         Ftp_System() = default;
         vector<User*> get_all_users();
+        vector<string> get_admin_files();
         void remove_online_user(int client_sd);
         string handle_command(char command[], int client_sd);
         bool has_user_data(int client_sd);

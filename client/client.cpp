@@ -14,6 +14,20 @@ void Client::set_ports(string config)
     data_channel_port = stoi(json_reader.find_value(config, DATA_CHANNEL_PORT_KEY));
 }
 
+vector<string> Client::split(string str, char divider)
+{
+    stringstream ss(str);
+    string word;
+    vector< string> result;
+
+    while(getline(ss, word, divider))
+    {
+        if(word != "")
+            result.push_back(word);
+    }
+    return result;
+}
+
 int Client::connect_on_port(int port){
     int sock, opt = 1;
     struct sockaddr_in serv_addr;
@@ -39,6 +53,11 @@ int Client::connect_on_port(int port){
 }
 
 void Client::run(){
+    struct stat st = {0};
+
+    if (stat(FTP_DOWNLOAD_DIR_NAME, &st) == -1)
+        mkdir(FTP_DOWNLOAD_DIR_NAME, 0700);
+
     int data_socket = connect_on_port(data_channel_port);
     int command_socket = connect_on_port(command_channel_port);
 
@@ -55,6 +74,8 @@ void Client::run(){
     while(1){
         cout << "FTP> ";
         getline(cin, request);
+        vector<string> request_params = split(request);
+        bool is_download_req = request_params.size() > 0 && request_params[0] == DOWNLOAD_COMMAND;
         send(command_socket , request.c_str() , strlen(request.c_str()) , 0 );
 
         memset(response, 0, strlen(response));
@@ -68,14 +89,38 @@ void Client::run(){
             valread = read(command_socket, response, PACKET_SIZE);
             int packet_size = atoi(response);
 
+            float progress = 0.0;
+            float step = 1.0 / (float)packet_size;
+            int barWidth = 70;
             for(int i = 0; i < packet_size; i++)
             {
                 memset(response, 0, strlen(response));
                 valread = read(data_socket, response, PACKET_SIZE);
                 string tmp = response;
                 data += tmp;
+                progress += step;
+                if (is_download_req)
+                {
+                    cout << "[";
+                    int pos = barWidth * progress;
+                    for (int i = 0; i < barWidth; ++i) {
+                        if (i < pos) cout << "=";
+                        else if (i == pos) cout << ">";
+                        else cout << " ";
+                    }
+                    cout << "] " << int(progress * 100.0) << " %\r";
+                    cout.flush();
+                }
             }
-            cout << data << endl;
+            if (is_download_req)
+            {
+                cout << endl;
+                ofstream MyFile(string(FTP_DOWNLOAD_DIR_NAME) + "/" + request_params[1]);
+                MyFile << data;
+                MyFile.close();
+            }
+            else
+                cout << data << endl;
         }
 
         memset(response, 0, strlen(response));

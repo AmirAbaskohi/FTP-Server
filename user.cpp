@@ -27,3 +27,8 @@ bool User::get_is_admin()
 {
     return is_admin;
 }
+
+void User::descrease_user_size(int decration_size)
+{
+    size -= decration_size;
+}
