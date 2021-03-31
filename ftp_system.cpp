@@ -239,7 +239,8 @@ string Ftp_System::handle_ls(int client_sd)
         return INTERNAL_SERVER_ERROR;
 }
 
-string Ftp_System::handle_pwd(int client_sd){
+string Ftp_System::handle_pwd(int client_sd)
+{
     map<int,ftp_user*>::iterator it;
 
     it = online_users.find(client_sd);
@@ -250,7 +251,8 @@ string Ftp_System::handle_pwd(int client_sd){
     return "257: " + it->second->current_dir + "\n";
 }
 
-string Ftp_System::handle_mkd(string path, int client_sd){
+string Ftp_System::handle_mkd(string path, int client_sd)
+{
     map<int,ftp_user*>::iterator it;
 
     it = online_users.find(client_sd);
@@ -258,8 +260,40 @@ string Ftp_System::handle_mkd(string path, int client_sd){
     if (it == online_users.end() || !it->second->is_authorized)
         return NEED_FOR_ACCOUNT;
 
-    cout << mkdir(path.c_str(),0777) <<endl;
-    return "hello";
+    vector<string> vpath = split(path, '/');
+    vector<string> tmp;
+
+    string new_directory;
+
+    if(path[0] == '/')
+        new_directory = "";
+    else
+        new_directory = it->second->current_dir;
+
+    for(int i = 0; i < vpath.size(); i++)
+    {
+        if (vpath[i] == ".") continue;
+        else if (vpath[i] == "..")
+        {
+            tmp = split(new_directory, '/');
+            if(tmp.size() > 0)
+                tmp.pop_back();
+            new_directory = "/" + join(tmp, '/');
+        }
+        else
+        {
+            new_directory += (new_directory.back() == '/' ? "" : "/") + vpath[i];
+        }
+    }
+
+    DIR *dir = opendir(new_directory.c_str());
+    if (dir != NULL)
+        return INTERNAL_SERVER_ERROR;
+
+    if ((mkdir(path.c_str(),0777) == 0))
+        return "257: " + path + " created.\n";
+
+    return INTERNAL_SERVER_ERROR;
 }
 
 string Ftp_System::handle_dele(string type, string path, int client_sd)
@@ -295,7 +329,7 @@ string Ftp_System::handle_dele(string type, string path, int client_sd)
             {
                 selected_directory += (selected_directory.back() == '/' ? "" : "/") + vpath[i];
                 DIR *dir = opendir(selected_directory.c_str());
-                if (dir == 0)
+                if (dir == NULL)
                     return INTERNAL_SERVER_ERROR;
                 closedir(dir);
             }
@@ -360,7 +394,8 @@ string Ftp_System::handle_cwd(string path, int client_sd)
         else{
             new_directory += (new_directory.back() == '/' ? "" : "/") + vpath[i];
             DIR *dir = opendir(new_directory.c_str());
-            if (dir == 0)return INTERNAL_SERVER_ERROR;
+            if (dir == NULL)
+                return INTERNAL_SERVER_ERROR;
             closedir(dir);
         }
     }
