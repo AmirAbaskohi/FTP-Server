@@ -49,10 +49,9 @@ class Server{
         void set_sockets(int& max_socket_descriptor, fd_set& readfds);
         void accept_connections();
         void handle_clients_requests(fd_set& readfds);
-
-        
+        void send_and_receive_data(int valread, char buffer[], int sd);
     public:
-    vector<string> split_to_packets(string data, int packet_size);
+        vector<string> split_to_packets(string data, int packet_size);
         Server(string config_file_path);
         void run();
         void print_server_info();

@@ -25,6 +25,41 @@ vector<string> Ftp_System::split(string str, char divider = ' ')
     return result;
 }
 
+int Ftp_System::delete_directory(string path)
+{
+    DIR *dir;
+	struct dirent *ent;
+
+	dir = opendir (path.c_str());
+
+	if (dir != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
+            if (strcmp(ent -> d_name, ".") == 0 || strcmp(ent -> d_name, "..") == 0)
+                continue;
+
+            int result;
+
+            string name(ent->d_name);
+            string addr = path + "/" + name;
+
+            if (ent->d_type != DT_DIR)
+                result = remove(addr.c_str());
+        	else  
+                result = delete_directory(addr);
+
+            if (result != 0)
+                return result;
+        }
+        closedir (dir);
+	}
+
+    remove(path.c_str());
+
+    return 0;
+}
+
 bool Ftp_System::does_file_exist(string file_name, string directory)
 {
     DIR *dir;
@@ -229,23 +264,58 @@ string Ftp_System::handle_mkd(string path, int client_sd){
 
 string Ftp_System::handle_dele(string type, string path, int client_sd)
 {
+    string selected_directory;
     map<int,ftp_user*>::iterator it;
     it = online_users.find(client_sd);
 
     if (it == online_users.end() || !it->second->is_authorized)
         return NEED_FOR_ACCOUNT;
-    
-    if (type == "-f")
+
+    if (type == DIRECTORY_FLAG)
     {
+        vector<string> vpath = split(path, '/');
+        vector<string> tmp;
+
+        if(path[0] == '/')
+            selected_directory = "";
+        else
+            selected_directory = it->second->current_dir;
+
+        for(int i = 0; i < vpath.size(); i++)
+        {
+            if (vpath[i] == ".") continue;
+            else if (vpath[i] == "..")
+            {
+                tmp = split(selected_directory, '/');
+                if(tmp.size() > 0)
+                    tmp.pop_back();
+                selected_directory = "/" + join(tmp, '/');
+            }
+            else
+            {
+                selected_directory += (selected_directory.back() == '/' ? "" : "/") + vpath[i];
+                DIR *dir = opendir(selected_directory.c_str());
+                if (dir == 0)
+                    return INTERNAL_SERVER_ERROR;
+                closedir(dir);
+            }
+        }
+        if ((delete_directory(selected_directory)) == 0)
+            return "250: " + path + " deleted.\n";
+    }
+    else if (type == FILE_FLAG)
+    {
+        if (is_file_for_admin(path) && !it->second->user_info->get_is_admin())
+            return FILE_UNAVAILABLE;
+
+        if (!does_file_exist(path, it->second->current_dir))
+            return INTERNAL_SERVER_ERROR;
+        
         string file_path = it->second->current_dir + "/" + path ;
-        if (remove(file_path.c_str()) == 0)
-            return SUCCESSFUL_CHANGE;
+        if ((remove(file_path.c_str()) == 0))
+            return "250: " + path + " deleted.\n";
     }
-    else if (type == "-d")
-    {
-        if (remove(path.c_str()) == 0)
-            return SUCCESSFUL_CHANGE;
-    }
+
     return INTERNAL_SERVER_ERROR;
 }
 
@@ -384,6 +454,8 @@ string Ftp_System::handle_command(char command[], int client_sd)
     }
     else if (splitted_cmd[0] == RENAME_COMMAND && splitted_cmd.size() == 3)
         return handle_rename(splitted_cmd[1], splitted_cmd[2], client_sd);
+    else if (splitted_cmd[0] == DELETE_COMMAND && splitted_cmd.size() == 3 && (splitted_cmd[1] == FILE_FLAG || splitted_cmd[1] == DIRECTORY_FLAG))
+        return handle_dele(splitted_cmd[1], splitted_cmd[2], client_sd);
     else if (splitted_cmd[0] == DOWNLOAD_COMMAND && splitted_cmd.size() == 2)
         return handle_download(splitted_cmd[1], client_sd);
 

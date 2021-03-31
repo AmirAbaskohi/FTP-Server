@@ -27,6 +27,9 @@
 #define CWD_COMMAND "cwd"
 #define RENAME_COMMAND "rename"
 #define DOWNLOAD_COMMAND "retr"
+#define DELETE_COMMAND "dele"
+#define FILE_FLAG "-f"
+#define DIRECTORY_FLAG "-d"
 
 #define BAD_SEQUENCE_OF_COMMANDS "‫‪503:‬‬ ‫‪Bad‬‬ ‫‪sequence‬‬ ‫‪of‬‬ ‫‪commands.‬‬\n"
 #define INVALID_USERNAME_OR_PASSWORD "‫‪430:‬‬ ‫‪Invalid‬‬ ‫‪username‬‬ ‫‪or‬‬ ‫‪password‬‬\n"
@@ -75,6 +78,7 @@ class Ftp_System{
         bool does_file_exist(string file_name, string directory);
         bool is_file_for_admin(string file_name);
         int get_file_size(string file_name, string directory);
+        int delete_directory(string path);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);
     public:

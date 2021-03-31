@@ -247,33 +247,36 @@ void Server::handle_clients_requests(fd_set& readfds)
                 clients[i] = 0;  
             }  
             else 
-            {   
-                buffer[valread] = '\0';
-                string response = system.handle_command(buffer, sd);
-                if (system.has_user_data(sd))
-                {
-                    vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
-                    send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
-                    usleep(100);
-                    string packet_size = to_string(packets.size());
-                    send(sd ,packet_size.c_str() ,strlen(packet_size.c_str()) , 0);
-                    usleep(100);
-                    for(int i = 0; i < packets.size(); i++)
-                    {
-                        send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
-                        usleep(100);
-                    }
-                }
-                else
-                {
-                    send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
-                    usleep(100);
-                }
-                send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
-                usleep(100);
-            }  
+                send_and_receive_data(valread, buffer, sd);
         }  
     }
+}
+
+void Server::send_and_receive_data(int valread, char buffer[], int sd)
+{
+    buffer[valread] = '\0';
+    string response = system.handle_command(buffer, sd);
+    if (system.has_user_data(sd))
+    {
+        vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
+        send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
+        usleep(500);
+        string packet_size = to_string(packets.size());
+        send(sd ,packet_size.c_str() ,strlen(packet_size.c_str()) , 0);
+        usleep(500);
+        for(int i = 0; i < packets.size(); i++)
+        {
+            send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
+            usleep(500);
+        }
+    }
+    else
+    {
+        send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
+        usleep(500);
+    }
+    send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
+    usleep(500);
 }
 
 void Server::run()
