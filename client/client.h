@@ -55,9 +55,17 @@ class Client{
     private:
         int command_channel_port;
         int data_channel_port;
+        int command_socket;
+        int data_socket;
+        string user_name;
+        bool is_logged_in;
         void set_ports(string config);
         int connect_on_port(int port);
         vector<string> split(string str, char divider = ' ');
+        int create_download_directory();
+        void send_and_receive_data(string request, char buffer[], vector<string> request_params);
+        void print_terminal_command();
+        void update_user_name_and_is_logged_in(short req_type, char response[], vector<string> request_params);
     public:
         Client(string config_file_path);
         void run();
