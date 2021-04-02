@@ -99,6 +99,8 @@ void Client::run(){
                 string tmp = response;
                 data += tmp;
                 progress += step;
+                if (i == packet_size - 1 && progress != 1)
+                    progress = 1.0;
                 if (is_download_req)
                 {
                     cout << "[";

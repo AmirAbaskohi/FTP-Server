@@ -31,7 +31,7 @@ vector<User*> Server::get_config_users(string config)
         string admin = json_reader.find_value(users_json_objects[i], ADMIN_KEY);
         string size = json_reader.find_value(users_json_objects[i], SIZE_KEY);
 
-        result.push_back(new User(user_name, password, stoi(size), admin == "true" ? true : false));
+        result.push_back(new User(user_name, password, (long)(stol(size)*1024), admin == "true" ? true : false));
     }
 
     return result;
@@ -222,7 +222,7 @@ void Server::accept_connections()
 
 void Server::handle_clients_requests(fd_set& readfds)
 {
-    char buffer[1025];
+    char buffer[PACKET_SIZE+1];
     int valread;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
@@ -233,7 +233,7 @@ void Server::handle_clients_requests(fd_set& readfds)
             
         if (FD_ISSET(sd , &readfds))  
         {  
-            if ((valread = read(sd , buffer, 1024)) == 0)  
+            if ((valread = read(sd , buffer, PACKET_SIZE)) == 0)  
             {  
                 getpeername(sd , (struct sockaddr*)&address , \
                     (socklen_t*)&addrlen);  
@@ -256,27 +256,31 @@ void Server::send_and_receive_data(int valread, char buffer[], int sd)
 {
     buffer[valread] = '\0';
     string response = system.handle_command(buffer, sd);
-    if (system.has_user_data(sd))
+    if (fork() == 0)
     {
-        vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
-        send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
-        usleep(500);
-        string packet_size = to_string(packets.size());
-        send(sd ,packet_size.c_str() ,strlen(packet_size.c_str()) , 0);
-        usleep(500);
-        for(int i = 0; i < packets.size(); i++)
+        if (system.has_user_data(sd))
         {
-            send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
+            vector<string> packets = split_to_packets(system.get_user_data(sd), PACKET_SIZE);
+            send(sd ,DATA_SENDING_MESSAGE ,strlen(DATA_SENDING_MESSAGE) , 0);
+            usleep(500);
+            string packet_size = to_string(packets.size());
+            send(sd ,packet_size.c_str() ,strlen(packet_size.c_str()) , 0);
+            usleep(500);
+            for(int i = 0; i < packets.size(); i++)
+            {
+                send(clients_command_data[sd], packets[i].c_str(), strlen(packets[i].c_str()),0);
+                usleep(500);
+            }
+        }
+        else
+        {
+            send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
             usleep(500);
         }
-    }
-    else
-    {
-        send(sd ,NO_DATA ,strlen(NO_DATA) , 0);
+        send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
         usleep(500);
+        exit(EXIT_SUCCESS);
     }
-    send(sd ,response.c_str() ,strlen(response.c_str()) , 0);
-    usleep(500);
 }
 
 void Server::run()

@@ -79,7 +79,7 @@ class Ftp_System{
         string handle_help(int client_sd);
         bool does_file_exist(string file_name, string directory);
         bool is_file_for_admin(string file_name);
-        int get_file_size(string file_name, string directory);
+        long get_file_size(string file_name, string directory);
         int delete_directory(string path);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);

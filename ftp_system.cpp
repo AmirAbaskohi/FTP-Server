@@ -93,11 +93,11 @@ bool Ftp_System::is_file_for_admin(string file_name)
     return false;
 }
 
-int Ftp_System::get_file_size(string file_name, string directory)
+long Ftp_System::get_file_size(string file_name, string directory)
 {
     ifstream in_file(directory+"/"+file_name, ios::binary);
     in_file.seekg(0, ios::end);
-    int file_size = in_file.tellg();
+    long file_size = in_file.tellg();
     in_file.close();
     return file_size;
 }

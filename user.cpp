@@ -1,6 +1,6 @@
 #include "user.h"
 
-User::User(string _user_name, string _password, int _size, bool _is_admin)
+User::User(string _user_name, string _password, long _size, bool _is_admin)
 {
     user_name = _user_name;
     password = _password;

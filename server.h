@@ -25,7 +25,7 @@
 #define PASSWORD_KEY "password"
 #define SIZE_KEY "size"
 #define ADMIN_KEY "admin"
-#define PACKET_SIZE 1024
+#define PACKET_SIZE 2048
 #define DATA_SENDING_MESSAGE "Datas are sending"
 #define NO_DATA "No data"
 
