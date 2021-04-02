@@ -28,6 +28,7 @@
 #define RENAME_COMMAND "rename"
 #define DOWNLOAD_COMMAND "retr"
 #define DELETE_COMMAND "dele"
+#define HELP_COMMAND "help"
 #define FILE_FLAG "-f"
 #define DIRECTORY_FLAG "-d"
 
@@ -75,6 +76,7 @@ class Ftp_System{
         string handle_cwd(string path, int client_sd);
         string handle_rename(string old_name, string new_name, int client_sd);
         string handle_download(string file_name, int client_sd);
+        string handle_help(int client_sd);
         bool does_file_exist(string file_name, string directory);
         bool is_file_for_admin(string file_name);
         int get_file_size(string file_name, string directory);

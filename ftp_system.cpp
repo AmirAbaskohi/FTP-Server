@@ -451,6 +451,30 @@ string Ftp_System::handle_download(string file_name, int client_sd)
     return INTERNAL_SERVER_ERROR;
 }
 
+string Ftp_System::handle_help(int client_sd)
+{
+    map<int,ftp_user*>::iterator it;
+    it = online_users.find(client_sd);
+
+    if (it == online_users.end() || !it->second->is_authorized)
+        return NEED_FOR_ACCOUNT;
+    
+    string result = "214\n";
+    result += "USER [name], Its argument is used to specify the user's string. It is used for user authentication\n\n";
+    result += "PASS [password], Its argument is used to specify the user's password. It is used for user authentication\n\n";
+    result += "PWD , It is used for display user's current directory\n\n";
+    result += "MKD [directory path] , Its argument is used to specify the path of directory. It is used for making new directory\n\n";
+    result += "DELE -f [file name], Its argument is used to specify the name of file. It is used for deleting existing file\n\n";
+    result += "DELE -d [directory path], Its argument is used to specify the path of directory. It is used for deleting existing directory\n\n";
+    result += "LS , It is used for display list of files and directories in current directory\n\n";
+    result += "CWD [path] , Its argument is used to specify the path of destination directory. It is used for change current directory\n\n";
+    result += "RENAME [from] [to], Its arguments is used to specify the old_name[from] and new_name[to]. It is used for change a file name\n\n";
+    result += "RETR [name], Its argument is used to specify the name of file. It is used for downloding a file\n\n";
+    result += "QUIT , It is used for quit from ftp server\n\n";
+    result += "HELP, It is used for displaying commands help\n\n";
+    return result;
+}
+
 string Ftp_System::handle_command(char command[], int client_sd)
 {
     map<int,ftp_user*>::iterator it;
@@ -493,6 +517,8 @@ string Ftp_System::handle_command(char command[], int client_sd)
         return handle_dele(splitted_cmd[1], splitted_cmd[2], client_sd);
     else if (splitted_cmd[0] == DOWNLOAD_COMMAND && splitted_cmd.size() == 2)
         return handle_download(splitted_cmd[1], client_sd);
+    else if (splitted_cmd[0] == HELP_COMMAND && splitted_cmd.size() == 1)
+        return handle_help(client_sd);
 
     return SYNTAX_ERROR;
 }
