@@ -81,6 +81,7 @@ class Ftp_System{
         bool is_file_for_admin(string file_name);
         long get_file_size(string file_name, string directory);
         int delete_directory(string path);
+        bool has_directory_admin_file(string path);
         User* find_user(string user_name);
         ftp_user* create_online_user(User* user);
     public:

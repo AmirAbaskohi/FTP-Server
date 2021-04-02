@@ -60,6 +60,41 @@ int Ftp_System::delete_directory(string path)
     return 0;
 }
 
+bool Ftp_System::has_directory_admin_file(string path)
+{
+    DIR *dir;
+	struct dirent *ent;
+
+	dir = opendir (path.c_str());
+
+	if (dir != NULL)
+    {
+        while ((ent = readdir (dir)) != NULL)
+        {
+            if (strcmp(ent -> d_name, ".") == 0 || strcmp(ent -> d_name, "..") == 0)
+                continue;
+
+            string name(ent->d_name);
+            string addr = path + "/" + name;
+
+            if (ent->d_type != DT_DIR && is_file_for_admin(name))
+            {
+                closedir (dir);
+                return true;
+            }
+        	else if(has_directory_admin_file(addr))
+            {
+                closedir (dir);
+                return true;
+            }  
+                
+        }
+        closedir (dir);
+	}
+
+    return false;
+}
+
 bool Ftp_System::does_file_exist(string file_name, string directory)
 {
     DIR *dir;
@@ -333,6 +368,10 @@ string Ftp_System::handle_dele(string type, string path, int client_sd)
                 closedir(dir);
             }
         }
+
+        if (has_directory_admin_file(selected_directory) && !it->second->user_info->get_is_admin())
+            return FILE_UNAVAILABLE;
+
         if ((delete_directory(selected_directory)) == 0)
             return "250: " + path + " deleted.\n";
     }
