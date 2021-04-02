@@ -168,13 +168,12 @@ string Ftp_System::handle_user(vector<string> args, int client_sd)
     if (it != online_users.end() && it->second->is_authorized)
         return BAD_SEQUENCE_OF_COMMANDS;
 
-    if (it != online_users.end())
-        remove_online_user(client_sd);
-
     User* selected_user = find_user(args[1]);
     if (selected_user == NULL)
         return INVALID_USERNAME_OR_PASSWORD;
 
+    if (it != online_users.end())
+        remove_online_user(client_sd);
     online_users.insert(pair<int, ftp_user*>(client_sd, create_online_user(selected_user)));
     return USERNAME_ACCEPTED;
 }

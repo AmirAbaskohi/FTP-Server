@@ -60,22 +60,33 @@ void Client::run(){
 
     int data_socket = connect_on_port(data_channel_port);
     int command_socket = connect_on_port(command_channel_port);
-
-    cout << "data socket = " << data_socket << "   commad socket = " << command_socket <<endl;
-
     if (data_socket <= 0 || command_socket <= 0) return;
 
     char response[PACKET_SIZE] = {0};
     string request;
     string data;
 
+    string user_name = "";
+    bool is_logged_in = false;
+
     int valread = read(command_socket , response, PACKET_SIZE);
     cout << response << endl; 
     while(1){
-        cout << "FTP> ";
+
+        cout << BOLDGREEN << "FTP" << RESET;
+        if (user_name != "" && is_logged_in)
+            cout << BOLDCYAN << "[" << user_name << "]" << RESET;
+        else if(user_name != "" && !is_logged_in)
+            cout << BOLDRED << "[" << user_name << "]" << RESET;
+        cout << BOLDGREEN << "> " << RESET;
         getline(cin, request);
+
         vector<string> request_params = split(request);
         bool is_download_req = request_params.size() > 0 && request_params[0] == DOWNLOAD_COMMAND;
+        bool is_user_req = request_params.size() > 0 && request_params[0] == USER_COMMAND;
+        bool is_pass_req = request_params.size() > 0 && request_params[0] == PASS_COMMAND;
+        bool is_quit_req = request_params.size() > 0 && request_params[0] == QUIT_COMMAND;
+
         send(command_socket , request.c_str() , strlen(request.c_str()) , 0 );
 
         memset(response, 0, strlen(response));
@@ -128,6 +139,26 @@ void Client::run(){
         memset(response, 0, strlen(response));
         valread = read(command_socket , response, PACKET_SIZE);
         cout << response << endl;
+
+        if (is_user_req)
+        {
+            vector<string> response_splitted = split(response, ':');
+            user_name = stoi(response_splitted[0]) == SUCCESSFUL_USER ? request_params[1] : user_name;
+        }
+        else if (is_pass_req)
+        {
+            vector<string> response_splitted = split(response, ':');
+            is_logged_in = stoi(response_splitted[0]) == SUCCESSFUL_PASS ? true : false;
+        }
+        else if (is_quit_req)
+        {
+            vector<string> response_splitted = split(response, ':');
+            if (stoi(response_splitted[0]) == SUCCESSFUL_QUIT)
+            {
+                user_name = "";
+                is_logged_in = false;
+            }
+        }
     }
 }
 
