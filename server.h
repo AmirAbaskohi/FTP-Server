@@ -16,6 +16,7 @@
 #include "json_reader.h"
 #include "ftp_system.h"
 #include "user.h"
+#include "logger.h"
 
 #define USERS_KEY "users"
 #define COMMAND_CHANNEL_PORT_KEY "commandChannelPort"

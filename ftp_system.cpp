@@ -209,6 +209,8 @@ string Ftp_System::handle_user(vector<string> args, int client_sd)
 
     if (it != online_users.end())
         remove_online_user(client_sd);
+
+    write_log("User with user name «" + args[1] + "» logged in.");
     online_users.insert(pair<int, ftp_user*>(client_sd, create_online_user(selected_user)));
     return USERNAME_ACCEPTED;
 }
@@ -226,6 +228,7 @@ string Ftp_System::handle_password(vector<string> args, int client_sd)
     if (selected_user->get_password() != args[1])
         return INVALID_USERNAME_OR_PASSWORD;
 
+    write_log("User with user name «" + it->second->user_info->get_user_name() + "» entered password and is authorized.");
     it->second->is_authorized = true;
     return PASSWORD_ACCEPTED;
 }
@@ -325,7 +328,10 @@ string Ftp_System::handle_mkd(string path, int client_sd)
         return INTERNAL_SERVER_ERROR;
 
     if ((mkdir(path.c_str(),0777) == 0))
+    {
+        write_log("User with user name «" + it->second->user_info->get_user_name() + "» create directory «" + new_directory + "».");
         return "257: " + path + " created.\n";
+    }
 
     return INTERNAL_SERVER_ERROR;
 }
@@ -373,7 +379,10 @@ string Ftp_System::handle_dele(string type, string path, int client_sd)
             return FILE_UNAVAILABLE;
 
         if ((delete_directory(selected_directory)) == 0)
+        {
+            write_log("User with user name «" + it->second->user_info->get_user_name() + "» deleted directory «" + selected_directory + "».");
             return "250: " + path + " deleted.\n";
+        }
     }
     else if (type == FILE_FLAG)
     {
@@ -385,7 +394,10 @@ string Ftp_System::handle_dele(string type, string path, int client_sd)
         
         string file_path = it->second->current_dir + "/" + path ;
         if ((remove(file_path.c_str()) == 0))
+        {
+            write_log("User with user name «" + it->second->user_info->get_user_name() + "» deleted file «" + file_path + "».");
             return "250: " + path + " deleted.\n";
+        }
     }
 
     return INTERNAL_SERVER_ERROR;
@@ -437,8 +449,11 @@ string Ftp_System::handle_cwd(string path, int client_sd)
             closedir(dir);
         }
     }
+
+    write_log("User with user name «" + it->second->user_info->get_user_name() + "» changed directory from «" +
+             it->second->current_dir + "» to «" + new_directory + "»." );
+
     it->second->current_dir = new_directory;
-    
     return SUCCESSFUL_CHANGE;
 }
 
@@ -450,10 +465,17 @@ string Ftp_System::handle_rename(string old_name, string new_name, int client_sd
     if (it == online_users.end() || !it->second->is_authorized)
         return NEED_FOR_ACCOUNT;
 
+    if (!does_file_exist(old_name, it->second->current_dir))
+        return INTERNAL_SERVER_ERROR;
+
     string old_address = it->second->current_dir + "/" + old_name ;
     string new_address = it->second->current_dir + "/" + new_name ;
     if (rename(old_address.c_str(), new_address.c_str()) == 0)
+    {
+        write_log("User with user name «" + it->second->user_info->get_user_name() + "» in directory «" +
+             it->second->current_dir + "» renamed file from «" + old_name + "» to «" + new_name +"»." );
         return SUCCESSFUL_CHANGE;
+    }
     else
         return INTERNAL_SERVER_ERROR;
 }
@@ -483,6 +505,8 @@ string Ftp_System::handle_download(string file_name, int client_sd)
 
         it->second->data = content;
         it->second->has_data = true;
+
+        write_log("User with user name «" + it->second->user_info->get_user_name() + "» downloaded file «" + file_name + "»." );
         return SUCCESSFUL_DOWNLOAD;
     }
 
@@ -568,7 +592,10 @@ void Ftp_System::remove_online_user(int client_sd)
     it = online_users.find(client_sd);
 
     if (it != online_users.end())
+    {
+        write_log("User with user name «" + it->second->user_info->get_user_name() + "» logged out.");
         online_users.erase(client_sd);
+    }
 }
 
 vector<User*> Ftp_System::get_all_users()

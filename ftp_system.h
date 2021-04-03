@@ -14,8 +14,9 @@
 #include <netinet/in.h> 
 #include <arpa/inet.h> 
 #include <unistd.h> 
-#include "user.h"
 #include <filesystem>
+#include "user.h"
+#include "logger.h"
 
 #define USER_COMMAND "user"
 #define PASS_COMMAND "pass"

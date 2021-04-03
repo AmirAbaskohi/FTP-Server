@@ -1,0 +1,11 @@
+2021-04-03 06:14:01 :: User with user name «Ali» logged in.
+2021-04-03 06:14:05 :: User with user name «Ali» entered password and is authorized.
+2021-04-03 06:24:20 :: User with user name «Ali» logged in.
+2021-04-03 06:24:23 :: User with user name «Ali» entered password and is authorized.
+2021-04-03 06:24:30 :: User with user name «Mohsen» logged in.
+2021-04-03 06:24:34 :: User with user name «Mohsen» entered password and is authorized.
+2021-04-03 06:24:47 :: User with user name «Mohsen» changed directory from «/home/therealrondon/Desktop/CN/CA1-FTPServer» to «/home/therealrondon/Desktop/CN».
+2021-04-03 06:25:06 :: User with user name «Mohsen» changed directory from «/home/therealrondon/Desktop/CN» to «/home/therealrondon/Desktop/CN/CA1-FTPServer».
+2021-04-03 06:25:13 :: User with user name «Mohsen» logged out.
+2021-04-03 06:25:38 :: User with user name «Ali» downloaded file «log.txt».
+2021-04-03 06:25:43 :: User with user name «Ali» logged out.
