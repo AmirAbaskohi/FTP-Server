@@ -7,9 +7,9 @@
 using namespace std;
 
 
-int main(int argc, char const *argv[])
+int main(int argc, char* argv[])
 {
-    Client client("../config.json");
+    Client client(argv[1]);
     
     client.run();
     

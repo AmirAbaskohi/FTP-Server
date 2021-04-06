@@ -10,13 +10,11 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char* argv[])
 {
-    Server server = Server(CONFIG_FILE_PATH);
+    Server server = Server(argv[1]);
     
     server.run();
-
-    // cout << rename("/home/arash/Desktop/test.txt", "/home/arash/Desktop/aaaaaaaaaaaaaTest.txt");
-
+    
     return 0; 
 }
